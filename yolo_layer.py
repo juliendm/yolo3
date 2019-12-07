@@ -10,7 +10,7 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
     nB = target.size(0)
     nA = num_anchors
     nC = num_classes
-    anchor_step = len(anchors)/num_anchors
+    anchor_step = len(anchors)//num_anchors
     conf_mask  = torch.ones(nB, nA, nH, nW) * noobject_scale
     coord_mask = torch.zeros(nB, nA, nH, nW)
     cls_mask   = torch.zeros(nB, nA, nH, nW)
@@ -106,12 +106,12 @@ class YoloLayer(nn.Module):
         self.num_classes = num_classes
         self.anchors = anchors
         self.num_anchors = num_anchors
-        self.anchor_step = len(anchors)/num_anchors
+        self.anchor_step = len(anchors)//num_anchors
         self.coord_scale = 1
         self.noobject_scale = 1
         self.object_scale = 5
         self.class_scale = 1
-        self.thresh = 0.6
+        self.thresh = 0.3
         self.stride = 32
         self.seen = 0
 

@@ -54,8 +54,8 @@ def print_cfg(blocks):
             stride = int(block['stride'])
             is_pad = int(block['pad'])
             pad = (kernel_size-1)/2 if is_pad else 0
-            width = (prev_width + 2*pad - kernel_size)/stride + 1
-            height = (prev_height + 2*pad - kernel_size)/stride + 1
+            width = (prev_width + 2*pad - kernel_size)//stride + 1
+            height = (prev_height + 2*pad - kernel_size)//stride + 1
             print('%5d %-6s %4d  %d x %d / %d   %3d x %3d x%4d   ->   %3d x %3d x%4d' % (ind, 'conv', filters, kernel_size, kernel_size, stride, prev_width, prev_height, prev_filters, width, height, filters))
             prev_width = width
             prev_height = height
@@ -66,8 +66,8 @@ def print_cfg(blocks):
         elif block['type'] == 'maxpool':
             pool_size = int(block['size'])
             stride = int(block['stride'])
-            width = prev_width/stride
-            height = prev_height/stride
+            width = prev_width//stride
+            height = prev_height//stride
             print('%5d %-6s       %d x %d / %d   %3d x %3d x%4d   ->   %3d x %3d x%4d' % (ind, 'max', pool_size, pool_size, stride, prev_width, prev_height, prev_filters, width, height, filters))
             prev_width = width
             prev_height = height
@@ -98,8 +98,8 @@ def print_cfg(blocks):
         elif block['type'] == 'reorg':
             stride = int(block['stride'])
             filters = stride * stride * prev_filters
-            width = prev_width/stride
-            height = prev_height/stride
+            width = prev_width//stride
+            height = prev_height//stride
             print('%5d %-6s             / %d   %3d x %3d x%4d   ->   %3d x %3d x%4d' % (ind, 'reorg', stride, prev_width, prev_height, prev_filters, width, height, filters))
             prev_width = width
             prev_height = height

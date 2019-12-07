@@ -24,7 +24,7 @@ def detect(cfgfile, weightfile, imgfile):
     if use_cuda:
         m.cuda()
 
-    img = Image.open(imgfile).convert('RGB')
+    img = Image.open(imgfile).convert('RGB').crop((0,1500,3384,2710))
     sized = img.resize((m.width, m.height))
     
     for i in range(2):
