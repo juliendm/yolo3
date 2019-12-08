@@ -41,7 +41,7 @@ def train(datacfg, cfgfile, weightfile):
     scales        = [float(scale) for scale in net_options['scales'].split(',')]
 
     #Train parameters
-    max_epochs    = max_batches*batch_size/nsamples+1
+    max_epochs    = max_batches*batch_size//nsamples+1
     use_cuda      = True
     seed          = int(time.time())
     eps           = 1e-5
@@ -69,11 +69,11 @@ def train(datacfg, cfgfile, weightfile):
     model.print_network()
 
     region_loss.seen  = model.seen
-    processed_batches = model.seen/batch_size
+    processed_batches = model.seen//batch_size
 
     init_width        = model.width
     init_height       = model.height
-    init_epoch        = model.seen/nsamples 
+    init_epoch        = model.seen//nsamples 
 
     kwargs = {'num_workers': num_workers, 'pin_memory': True} if use_cuda else {}
     test_loader = torch.utils.data.DataLoader(
@@ -119,8 +119,8 @@ def train(datacfg, cfgfile, weightfile):
             param_group['lr'] = lr/batch_size
         return lr
 
-    def train_epoch(epoch):
-        global processed_batches
+    def train_epoch(epoch, processed_batches):
+
         t0 = time.time()
         if ngpus > 1:
             cur_model = model.module
@@ -196,6 +196,8 @@ def train(datacfg, cfgfile, weightfile):
             cur_model.seen = (epoch + 1) * len(train_loader.dataset)
             cur_model.save_weights('%s/%06d.weights' % (backupdir, epoch+1))
 
+        return processed_batches
+
     def test_epoch(epoch):
         def truths_length(truths):
             for i in range(50):
@@ -255,8 +257,8 @@ def train(datacfg, cfgfile, weightfile):
         test_epoch(0)
     else:
         for epoch in range(init_epoch, max_epochs): 
-            train_epoch(epoch)
-            test_epoch(epoch)
+            processed_batches = train_epoch(epoch, processed_batches)
+            # test_epoch(epoch)
 
 
 

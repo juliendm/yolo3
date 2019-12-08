@@ -23,10 +23,10 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
 
     nAnchors = nA*nH*nW
     nPixels  = nH*nW
-    for b in xrange(nB):
+    for b in range(nB):
         cur_pred_boxes = pred_boxes[b*nAnchors:(b+1)*nAnchors].t()
         cur_ious = torch.zeros(nAnchors)
-        for t in xrange(50):
+        for t in range(50):
             if target[b][t*5+1] == 0:
                 break
             gx = target[b][t*5+1]*nW
@@ -36,6 +36,7 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             cur_gt_boxes = torch.FloatTensor([gx,gy,gw,gh]).repeat(nAnchors,1).t()
             cur_ious = torch.max(cur_ious, bbox_ious(cur_pred_boxes, cur_gt_boxes, x1y1x2y2=False))
         conf_mask[b][cur_ious>sil_thresh] = 0
+        #conf_mask[b][cur_ious.view(conf_mask[b].shape)>sil_thresh] = 0 # Note: yolo_v2 refion_loss.pu doesn't need this change
     if seen < 12800:
        if anchor_step == 4:
            tx = torch.FloatTensor(anchors).view(nA, anchor_step).index_select(1, torch.LongTensor([2])).view(1,nA,1,1).repeat(nB,1,nH,nW)
@@ -49,8 +50,8 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
 
     nGT = 0
     nCorrect = 0
-    for b in xrange(nB):
-        for t in xrange(50):
+    for b in range(nB):
+        for t in range(50):
             if target[b][t*5+1] == 0:
                 break
             nGT = nGT + 1
@@ -64,7 +65,7 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             gw = target[b][t*5+3]*nW
             gh = target[b][t*5+4]*nH
             gt_box = [0, 0, gw, gh]
-            for n in xrange(nA):
+            for n in range(nA):
                 aw = anchors[anchor_step*n]
                 ah = anchors[anchor_step*n+1]
                 anchor_box = [0, 0, aw, ah]
@@ -146,13 +147,19 @@ class YoloLayer(nn.Module):
             pred_boxes[1] = y.data + grid_y
             pred_boxes[2] = torch.exp(w.data) * anchor_w
             pred_boxes[3] = torch.exp(h.data) * anchor_h
+
+            # pred_boxes[0] = x.data.view(nB*nA*nH*nW) + grid_x
+            # pred_boxes[1] = y.data.view(nB*nA*nH*nW) + grid_y
+            # pred_boxes[2] = torch.exp(w.data.view(nB*nA*nH*nW)) * anchor_w
+            # pred_boxes[3] = torch.exp(h.data.view(nB*nA*nH*nW)) * anchor_h
+
             pred_boxes = convert2cpu(pred_boxes.transpose(0,1).contiguous().view(-1,4))
             t2 = time.time()
     
             nGT, nCorrect, coord_mask, conf_mask, cls_mask, tx, ty, tw, th, tconf,tcls = build_targets(pred_boxes, target.data, self.anchors, nA, nC, \
                                                                    nH, nW, self.noobject_scale, self.object_scale, self.thresh, self.seen)
             cls_mask = (cls_mask == 1)
-            nProposals = int((conf > 0.25).sum().data[0])
+            nProposals = int((conf > 0.25).sum().data)
     
             tx    = Variable(tx.cuda())
             ty    = Variable(ty.cuda())
@@ -183,7 +190,7 @@ class YoloLayer(nn.Module):
                 print('     build targets : %f' % (t3 - t2))
                 print('       create loss : %f' % (t4 - t3))
                 print('             total : %f' % (t4 - t0))
-            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data[0], loss_y.data[0], loss_w.data[0], loss_h.data[0], loss_conf.data[0], loss_cls.data[0], loss.data[0]))
+            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data, loss_y.data, loss_w.data, loss_h.data, loss_conf.data, loss_cls.data, loss.data))
             return loss
         else:
             masked_anchors = []
