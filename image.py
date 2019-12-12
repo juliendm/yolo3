@@ -84,13 +84,21 @@ def fill_truth_detection(labpath, w, h, flip, dx, dy, sx, sy):
         bs = np.loadtxt(labpath)
         if bs is None:
             return label
-        bs = np.reshape(bs, (-1, 5))
+
+        num_keypoints = 9
+        num_labels = 2*num_keypoints+3
+        bs = np.reshape(bs, (-1, num_labels))
+
         cc = 0
         for i in range(bs.shape[0]):
-            x1 = bs[i][1] - bs[i][3]/2
-            y1 = bs[i][2] - bs[i][4]/2
-            x2 = bs[i][1] + bs[i][3]/2
-            y2 = bs[i][2] + bs[i][4]/2
+
+            bs[i][2] = (bs[i][2]*2710.0-1497.0)/(2710.0-1497.0)
+            bs[i][20] = bs[i][20]*2710.0/(2710.0-1497.0)
+
+            x1 = bs[i][1] - bs[i][19]/2
+            y1 = bs[i][2] - bs[i][20]/2
+            x2 = bs[i][1] + bs[i][19]/2
+            y2 = bs[i][2] + bs[i][20]/2
             
             x1 = min(0.999, max(0, x1 * sx - dx)) 
             y1 = min(0.999, max(0, y1 * sy - dy)) 
@@ -99,15 +107,19 @@ def fill_truth_detection(labpath, w, h, flip, dx, dy, sx, sy):
             
             bs[i][1] = (x1 + x2)/2
             bs[i][2] = (y1 + y2)/2
-            bs[i][3] = (x2 - x1)
-            bs[i][4] = (y2 - y1)
+            bs[i][19] = (x2 - x1)
+            bs[i][20] = (y2 - y1)
 
             if flip:
                 bs[i][1] =  0.999 - bs[i][1] 
             
-            if bs[i][3] < 0.001 or bs[i][4] < 0.001:
+            if bs[i][19] < 0.001 or bs[i][20] < 0.001:
                 continue
-            label[cc] = bs[i]
+
+            bs[i][0] = car_id2class[bs[i][0]]
+
+            label[cc] = np.array([bs[i][0],bs[i][1],bs[i][2],bs[i][19],bs[i][20]])
+
             cc += 1
             if cc >= 50:
                 break
@@ -119,7 +131,7 @@ def load_data_detection(imgpath, shape, jitter, hue, saturation, exposure):
     labpath = imgpath.replace('images', 'labels').replace('JPEGImages', 'labels').replace('.jpg', '.txt').replace('.png','.txt')
 
     ## data augmentation
-    img = Image.open(imgpath).convert('RGB')
+    img = Image.open(imgpath).convert('RGB').crop((0,1500,3384,2710))
     img,flip,dx,dy,sx,sy = data_augmentation(img, shape, jitter, hue, saturation, exposure)
     label = fill_truth_detection(labpath, img.width, img.height, flip, dx, dy, 1./sx, 1./sy)
     return img,label

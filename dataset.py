@@ -61,7 +61,7 @@ class listDataset(Dataset):
             img, label = load_data_detection(imgpath, self.shape, jitter, hue, saturation, exposure)
             label = torch.from_numpy(label)
         else:
-            img = Image.open(imgpath).convert('RGB')
+            img = Image.open(imgpath).convert('RGB').crop((0,1500,3384,2710))
             if self.shape:
                 img = img.resize(self.shape)
     

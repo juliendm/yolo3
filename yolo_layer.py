@@ -34,9 +34,8 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, nH, nW,
             gw = target[b][t*5+3]*nW
             gh = target[b][t*5+4]*nH
             cur_gt_boxes = torch.FloatTensor([gx,gy,gw,gh]).repeat(nAnchors,1).t()
-            cur_ious = torch.max(cur_ious, bbox_ious(cur_pred_boxes, cur_gt_boxes, x1y1x2y2=False))
-        conf_mask[b][cur_ious>sil_thresh] = 0
-        #conf_mask[b][cur_ious.view(conf_mask[b].shape)>sil_thresh] = 0 # Note: yolo_v2 refion_loss.pu doesn't need this change
+            cur_ious = torch.max(cur_ious.view_as(conf_mask[b]), bbox_ious(cur_pred_boxes, cur_gt_boxes, x1y1x2y2=False).view_as(conf_mask[b]))
+        conf_mask[b][cur_ious.view_as(conf_mask[b])>sil_thresh] = 0
     if seen < 12800:
        if anchor_step == 4:
            tx = torch.FloatTensor(anchors).view(nA, anchor_step).index_select(1, torch.LongTensor([2])).view(1,nA,1,1).repeat(nB,1,nH,nW)
@@ -143,16 +142,10 @@ class YoloLayer(nn.Module):
             anchor_h = torch.Tensor(self.anchors).view(nA, self.anchor_step).index_select(1, torch.LongTensor([1])).cuda()
             anchor_w = anchor_w.repeat(nB, 1).repeat(1, 1, nH*nW).view(nB*nA*nH*nW)
             anchor_h = anchor_h.repeat(nB, 1).repeat(1, 1, nH*nW).view(nB*nA*nH*nW)
-            pred_boxes[0] = x.data + grid_x
-            pred_boxes[1] = y.data + grid_y
-            pred_boxes[2] = torch.exp(w.data) * anchor_w
-            pred_boxes[3] = torch.exp(h.data) * anchor_h
-
-            # pred_boxes[0] = x.data.view(nB*nA*nH*nW) + grid_x
-            # pred_boxes[1] = y.data.view(nB*nA*nH*nW) + grid_y
-            # pred_boxes[2] = torch.exp(w.data.view(nB*nA*nH*nW)) * anchor_w
-            # pred_boxes[3] = torch.exp(h.data.view(nB*nA*nH*nW)) * anchor_h
-
+            pred_boxes[0] = x.data.view_as(grid_x) + grid_x
+            pred_boxes[1] = y.data.view_as(grid_x) + grid_y
+            pred_boxes[2] = torch.exp(w.data.view_as(grid_x)) * anchor_w
+            pred_boxes[3] = torch.exp(h.data.view_as(grid_x)) * anchor_h
             pred_boxes = convert2cpu(pred_boxes.transpose(0,1).contiguous().view(-1,4))
             t2 = time.time()
     
@@ -166,7 +159,7 @@ class YoloLayer(nn.Module):
             tw    = Variable(tw.cuda())
             th    = Variable(th.cuda())
             tconf = Variable(tconf.cuda())
-            tcls  = Variable(tcls.view(-1)[cls_mask].long().cuda())
+            tcls  = Variable(tcls[cls_mask].long().cuda())
     
             coord_mask = Variable(coord_mask.cuda())
             conf_mask  = Variable(conf_mask.cuda().sqrt())
