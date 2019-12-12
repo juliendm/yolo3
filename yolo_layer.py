@@ -183,7 +183,8 @@ class YoloLayer(nn.Module):
                 print('     build targets : %f' % (t3 - t2))
                 print('       create loss : %f' % (t4 - t3))
                 print('             total : %f' % (t4 - t0))
-            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data, loss_y.data, loss_w.data, loss_h.data, loss_conf.data, loss_cls.data, loss.data))
+            if (self.seen-self.seen//100*100) < nB:
+                print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, w %f, h %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data, loss_y.data, loss_w.data, loss_h.data, loss_conf.data, loss_cls.data, loss.data))
             return loss
         else:
             masked_anchors = []

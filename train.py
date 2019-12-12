@@ -46,7 +46,7 @@ def train(datacfg, cfgfile, weightfile):
     use_cuda      = True
     seed          = int(time.time())
     eps           = 1e-5
-    save_interval = 10  # epoches
+    save_interval = 5  # epoches
     dot_interval  = 70  # batches
 
     # Test parameters
