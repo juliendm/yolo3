@@ -4,6 +4,7 @@ import random
 import os
 from PIL import Image
 import numpy as np
+from utils import *
 
 
 def scale_image_channel(im, c, v):

@@ -8,6 +8,7 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torchvision import datasets, transforms
 from torch.autograd import Variable
+import matplotlib.pyplot as plt
 
 import dataset
 import random
@@ -168,7 +169,7 @@ def train(datacfg, cfgfile, weightfile):
                     for k in range(num_gts):
                         x,y,w,h = truths[k, 1]*1696,truths[k, 2]*608,truths[k, 3]*1696,truths[k, 4]*608
                         plt.scatter(x, y, s=20, color='b')
-                        plt.plot([x-w/2.0,x+w/2.0,x+w/2.0,,x-w/2.0,,x-w/2.0], [y-w/2.0,y-w/2.0,y+w/2.0,y+w/2.0,y-w/2.0], color='g', linewidth=1)
+                        plt.plot([x-w/2.0,x+w/2.0,x+w/2.0,x-w/2.0,x-w/2.0], [y-h/2.0,y-h/2.0,y+h/2.0,y+h/2.0,y-h/2.0], color='g', linewidth=1)
 
                     plt.gca().invert_yaxis()
                     plt.show()
